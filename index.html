@@ -4067,28 +4067,39 @@ async function debugSync(){
 // ═══════════════════════════════════════════════════════
 function renderMyFields(fromM, toM) {
   _refreshFn = renderMyFields; destroyCharts();
-  const dept = DEPTS.find(d => d.id === CU.dept);
-  const schema = getDeptSchema(CU.dept);
-  const myFields = schema.filter(f => f.owner === CU.username);
-  const allFields = schema.filter(f => !f.owner || f.owner !== CU.username);
   const main = document.getElementById('main');
+  const allStore = getData();
+
+  // Collect assigned fields across ALL departments
+  const allSchemas = getFieldSchema();
+  const myDeptFields = []; // [{deptId, dept, field}]
+  DEPTS.forEach(d => {
+    const schema = allSchemas[d.id] || [];
+    schema.forEach(f => {
+      if (f.owner === CU.username) myDeptFields.push({deptId: d.id, dept: d, field: f});
+    });
+  });
+
+  const totalAssigned = myDeptFields.length;
 
   const poolAll = allMonths24();
   const poolOldFirst = [...poolAll].reverse();
 
-  function latestDeptDataMonth() {
+  function latestAnyDataMonth() {
     const store = getData();
     const keys = Object.keys(store).filter(k => {
-      const d = store[k] && store[k][CU.dept];
-      return d && typeof d === 'object' && Object.keys(d).some(k2 => !k2.startsWith('_'));
+      return DEPTS.some(d => {
+        const dd = store[k] && store[k][d.id];
+        return dd && typeof dd === 'object' && Object.keys(dd).some(k2 => !k2.startsWith('_'));
+      });
     });
     if (keys.length === 0) return curMonth();
     keys.sort((a, b) => b.localeCompare(a));
     return keys[0];
   }
 
-  if (!_hodRangeFrom) _hodRangeFrom = fromM || latestDeptDataMonth();
-  if (!_hodRangeTo)   _hodRangeTo   = toM   || latestDeptDataMonth();
+  if (!_hodRangeFrom) _hodRangeFrom = fromM || latestAnyDataMonth();
+  if (!_hodRangeTo)   _hodRangeTo   = toM   || latestAnyDataMonth();
   if (fromM) _hodRangeFrom = fromM;
   if (toM)   _hodRangeTo   = toM;
 
@@ -4102,70 +4113,63 @@ function renderMyFields(fromM, toM) {
     return all.slice(fi, ti + 1);
   }
   const entryMonths = getEntryMonths(_hodRangeFrom, _hodRangeTo);
-  const allStore = getData();
 
   const isSelect = k => ['daily_margin','fund_seg','inv_comp_filed','exchange_reply','internal_audit','pmla','str_filed','backup_verify','dr_drill','antivirus'].includes(k);
-  const isText   = k => (schema.find(f=>f.key===k)||{}).type === 'text';
   const selectOpts = ['Completed','Pending','Yes','No','N/A'];
 
-  function buildRows(fields, sectionLabel, sectionColor) {
-    if (!fields.length) return '';
-    let rows = `<tr class="section-header" style="background:linear-gradient(90deg,${sectionColor}22,${sectionColor}08)">
-      <td colspan="${entryMonths.length+1}" style="color:${sectionColor}">${sectionLabel}</td>
+  // Group fields by department
+  const byDept = {};
+  myDeptFields.forEach(({deptId, dept, field}) => {
+    if (!byDept[deptId]) byDept[deptId] = {dept, fields: []};
+    byDept[deptId].fields.push(field);
+  });
+
+  const monthHeaders = entryMonths.map(m => `<th class="month-col">${fmtMonthShort(m)}</th>`).join('');
+
+  let allSectionRows = '';
+  Object.entries(byDept).forEach(([deptId, {dept, fields}]) => {
+    allSectionRows += `<tr class="section-header" style="background:linear-gradient(90deg,${dept.col}22,${dept.col}08)">
+      <td colspan="${entryMonths.length+1}" style="color:${dept.col}">${dept.icon} ${dept.name}</td>
     </tr>`;
-    fields.forEach(({label, key}) => {
+    fields.forEach(({label, key, type}) => {
+      const isTextType = type === 'text';
       const cells = entryMonths.map(m => {
-        const saved = (allStore[m] && allStore[m][CU.dept]) || {};
+        const saved = (allStore[m] && allStore[m][deptId]) || {};
         const approved = saved._approved;
         const val = saved[key] !== undefined ? saved[key] : '';
-        if (isText(key)) {
-          return `<td style="min-width:180px"><textarea class="dealer-ta" data-month="${m}" data-key="${key}" ${approved?'disabled':''} style="width:100%;min-height:52px;resize:vertical;border:none;background:transparent;padding:7px 10px;font-family:var(--font);font-size:12px;outline:none;transition:background .15s${approved?';opacity:.5;cursor:not-allowed':''}" onfocus="this.style.background='rgba(26,86,219,0.06)'" onblur="this.style.background='transparent'" placeholder="…">${val}</textarea></td>`;
+        if (isTextType) {
+          return `<td style="min-width:180px"><textarea class="dealer-ta" data-month="${m}" data-key="${key}" data-dept="${deptId}" ${approved?'disabled':''} style="width:100%;min-height:52px;resize:vertical;border:none;background:transparent;padding:7px 10px;font-family:var(--font);font-size:12px;outline:none;transition:background .15s${approved?';opacity:.5;cursor:not-allowed':''}" onfocus="this.style.background='rgba(26,86,219,0.06)'" onblur="this.style.background='transparent'" placeholder="…">${val}</textarea></td>`;
         }
         if (isSelect(key)) {
-          return `<td><select class="dealer-inp" data-month="${m}" data-key="${key}" ${approved?'disabled':''} style="${approved?'opacity:.5;cursor:not-allowed':''}">
+          return `<td><select class="dealer-inp" data-month="${m}" data-key="${key}" data-dept="${deptId}" ${approved?'disabled':''} style="${approved?'opacity:.5;cursor:not-allowed':''}">
             <option value="">—</option>
             ${selectOpts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
           </select></td>`;
         }
-        return `<td class="num-cell" onclick="activateCell(this)" data-month="${m}" data-key="${key}" data-approved="${approved?'1':'0'}">
+        return `<td class="num-cell" onclick="activateCell(this)" data-month="${m}" data-key="${key}" data-dept="${deptId}" data-approved="${approved?'1':'0'}">
           <div class="num-display${approved?' num-approved':''}">${isNumVal(val)?fmtFieldVal(val,key):'<span class="num-empty">—</span>'}</div>
-          <input type="number" class="dealer-inp num-input" data-month="${m}" data-key="${key}" value="${val}" placeholder="0" ${approved?'disabled':''} style="display:none" oninput="syncNumCell(this)" onblur="deactivateCell(this)" />
+          <input type="number" class="dealer-inp num-input" data-month="${m}" data-key="${key}" data-dept="${deptId}" value="${val}" placeholder="0" ${approved?'disabled':''} style="display:none" oninput="syncNumCell(this)" onblur="deactivateCell(this)" />
         </td>`;
       }).join('');
-      rows += `<tr><td>${label}${(!isText(key)&&!isSelect(key))?fmtBadgeHtml(key,'edit'):''}</td>${cells}</tr>`;
+      allSectionRows += `<tr><td>${label}${(!isTextType&&!isSelect(key))?fmtBadgeHtml(key,'edit'):''}</td>${cells}</tr>`;
     });
-    return rows;
-  }
-
-  const monthHeaders = entryMonths.map(m => {
-    const d = (allStore[m] && allStore[m][CU.dept]) || {};
-    const keys = Object.keys(d).filter(k => !k.startsWith('_')).length;
-    const chip = d._approved
-      ? `<div class="month-status-chip ms-approved">✓ Approved</div>`
-      : keys > 0 ? `<div class="month-status-chip ms-submitted">Saved</div>`
-      : `<div class="month-status-chip ms-pending">Empty</div>`;
-    return `<th class="month-col">${fmtMonthShort(m)}<br>${chip}</th>`;
-  }).join('');
-
-  const myRows    = buildRows(myFields,  `✏️ My Fields — ${CU.name}`, '#1a56db');
-  const otherRows = buildRows(allFields, `👥 Other Team Members' Fields (read-only)`, '#9ca3af');
+  });
 
   main.innerHTML = `
   <div class="ph fade-up">
     <div style="display:flex;align-items:center;gap:13px">
-      <div style="width:44px;height:44px;border-radius:11px;background:${dept.colBg};display:flex;align-items:center;justify-content:center;font-size:18px">${dept.icon}</div>
+      <div style="width:44px;height:44px;border-radius:11px;background:rgba(26,86,219,0.1);display:flex;align-items:center;justify-content:center;font-size:18px">✏️</div>
       <div>
         <div class="ph-title">My Fields — ${CU.name}</div>
-        <div class="ph-sub">${dept.name} · ${myFields.length} field${myFields.length!==1?'s':''} assigned to you · ${entryMonths.length} month${entryMonths.length!==1?'s':''}</div>
+        <div class="ph-sub">${totalAssigned} field${totalAssigned!==1?'s':''} assigned to you across ${Object.keys(byDept).length} department${Object.keys(byDept).length!==1?'s':''} · ${entryMonths.length} month${entryMonths.length!==1?'s':''}</div>
       </div>
     </div>
     <div class="ph-actions">
-      <button class="btn btn-outline btn-sm" onclick="renderHodTabularEntry()">📋 Full Dept View</button>
       <button class="btn btn-primary" onclick="saveMyFields()">💾 Save My Fields</button>
     </div>
   </div>
 
-  ${myFields.length === 0 ? `<div class="info-box info-gold fade-up">⚠️ No fields are currently assigned to you. Ask the Administrator to assign fields via <strong>Manage Fields</strong>.</div>` : ''}
+  ${totalAssigned === 0 ? `<div class="info-box info-gold fade-up">⚠️ No fields are currently assigned to you. Ask the Administrator to assign fields via <strong>Manage Fields</strong>.</div>` : ''}
 
   <div class="card card-p fade-up" style="margin-bottom:16px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
     <div>
@@ -4181,16 +4185,8 @@ function renderMyFields(fromM, toM) {
   <div class="card fade-up-2" style="padding:0;overflow:hidden">
     <div class="entry-wrap">
       <table class="tbl-entry">
-        <thead>
-          <tr>
-            <th style="text-align:left">Metric</th>
-            ${monthHeaders}
-          </tr>
-        </thead>
-        <tbody>
-          ${myRows}
-          ${otherRows}
-        </tbody>
+        <thead><tr><th style="text-align:left">Metric</th>${monthHeaders}</tr></thead>
+        <tbody>${allSectionRows}</tbody>
       </table>
     </div>
   </div>
@@ -4202,8 +4198,14 @@ function renderMyFields(fromM, toM) {
 }
 
 function saveMyFields(submit = false) {
-  const schema = getDeptSchema(CU.dept);
-  const myKeys = new Set(schema.filter(f => f.owner === CU.username).map(f => f.key));
+  const allSchemas = getFieldSchema();
+
+  // Build map: deptId -> Set of keys owned by this user
+  const myKeysByDept = {};
+  DEPTS.forEach(d => {
+    const keys = (allSchemas[d.id]||[]).filter(f => f.owner === CU.username).map(f => f.key);
+    if (keys.length) myKeysByDept[d.id] = new Set(keys);
+  });
 
   const allMonthsInGrid = [...document.querySelectorAll('.dealer-inp[data-month],.dealer-ta[data-month]')]
     .map(el => el.dataset.month)
@@ -4213,33 +4215,36 @@ function saveMyFields(submit = false) {
   let saved = 0;
 
   allMonthsInGrid.forEach(m => {
-    const existing = (allStore[m] && allStore[m][CU.dept]) || {};
-    if (existing._approved) return;
-
-    const newData = { ...existing };
+    // Group inputs by dept for this month
+    const deptUpdates = {};
     document.querySelectorAll(`.dealer-inp[data-month="${m}"], .dealer-ta[data-month="${m}"]`).forEach(el => {
       const key = el.dataset.key;
-      if (!myKeys.has(key)) return; // only save MY fields
+      const deptId = el.dataset.dept || CU.dept;
+      if (!myKeysByDept[deptId] || !myKeysByDept[deptId].has(key)) return;
+      if (!deptUpdates[deptId]) deptUpdates[deptId] = {};
       const val = el.tagName === 'SELECT' ? el.value : el.value.trim();
-      if (val !== '') newData[key] = val;
+      if (val !== '') deptUpdates[deptId][key] = val;
     });
 
-    // Track who filled each field
-    const fieldMeta = { ...(existing._fieldMeta || {}) };
-    const who = CU.name + (CU.username ? ` (@${CU.username})` : '');
-    const when = new Date().toISOString();
-    myKeys.forEach(k => { if (newData[k] !== undefined && newData[k] !== '') fieldMeta[k] = { by: who, at: when }; });
-    newData._fieldMeta = fieldMeta;
-
-    const hasValues = Object.keys(newData).filter(k => !k.startsWith('_')).length > 0;
-    if (hasValues) {
-      if (submit) newData._submitted = new Date().toISOString();
-      setDeptData(m, CU.dept, newData);
-      saved++;
-    }
+    Object.entries(deptUpdates).forEach(([deptId, updates]) => {
+      const existing = (allStore[m] && allStore[m][deptId]) || {};
+      if (existing._approved) return;
+      const newData = { ...existing, ...updates };
+      const fieldMeta = { ...(existing._fieldMeta || {}) };
+      const who = CU.name + (CU.username ? ` (@${CU.username})` : '');
+      const when = new Date().toISOString();
+      Object.keys(updates).forEach(k => { fieldMeta[k] = { by: who, at: when }; });
+      newData._fieldMeta = fieldMeta;
+      const hasValues = Object.keys(newData).filter(k => !k.startsWith('_')).length > 0;
+      if (hasValues) {
+        if (submit) newData._submitted = new Date().toISOString();
+        setDeptData(m, deptId, newData);
+        saved++;
+      }
+    });
   });
 
-  showToast(saved > 0 ? `✓ Your fields saved for ${saved} month(s)` : 'No new data to save', saved > 0 ? 'success' : 'warn');
+  showToast(saved > 0 ? `✓ Your fields saved for ${saved} dept-month(s)` : 'No new data to save', saved > 0 ? 'success' : 'warn');
   renderMyFields(_hodRangeFrom, _hodRangeTo);
 }
 
