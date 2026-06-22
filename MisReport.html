@@ -3610,8 +3610,8 @@ function _renderFEFields(){
 
   const rows = fields.map((f,i)=>{
     const users = getUsers();
-    const deptPeople = Object.entries(users).filter(([uname,u])=>u.role==='hod'&&u.dept===_feActiveDept);
-    const validOwner = deptPeople.some(([uname])=>uname===f.owner) ? f.owner : null;
+    const allPeople = Object.entries(users).filter(([uname,u])=>u.role==='hod');
+    const validOwner = allPeople.some(([uname])=>uname===f.owner) ? f.owner : null;
     const ownerUser = validOwner ? (users[validOwner]||null) : null;
     const ownerBadge = ownerUser
       ? `<span class="fe-owner-badge" title="Assigned to ${ownerUser.name}"><span class="fe-owner-av">${ownerUser.name.charAt(0).toUpperCase()}</span><span class="fe-owner-nm">${ownerUser.name}</span></span>`
@@ -3708,15 +3708,26 @@ function _feSetType(idx, type){
 
 function _feOwnerOptions(currentOwner){
   const users = getUsers();
-  // Only show actual people (role=hod) in this dept — never show dept names
-  const peopleInDept = Object.entries(users).filter(([uname,u])=>
-    u.role==='hod' && u.dept===_feActiveDept && u.name && typeof u.name==='string'
+  // Show ALL people across all depts, grouped by dept
+  const allPeople = Object.entries(users).filter(([uname,u])=>
+    u.role==='hod' && u.name && typeof u.name==='string'
   );
-  // If currentOwner doesn't match any real user in this dept, treat as unassigned
-  const validOwner = peopleInDept.some(([uname])=>uname===currentOwner) ? currentOwner : null;
+  const validOwner = allPeople.some(([uname])=>uname===currentOwner) ? currentOwner : null;
   let opts = `<option value=""${!validOwner?' selected':''}>👥 Anyone in dept</option>`;
-  peopleInDept.forEach(([uname,u])=>{
-    opts += `<option value="${uname}"${validOwner===uname?' selected':''}>${u.name}</option>`;
+  // Group by dept
+  const byDept = {};
+  allPeople.forEach(([uname,u])=>{
+    if(!byDept[u.dept]) byDept[u.dept]=[];
+    byDept[u.dept].push([uname,u]);
+  });
+  Object.entries(byDept).forEach(([deptId, people])=>{
+    const deptObj = DEPTS.find(d=>d.id===deptId);
+    const deptLabel = deptObj ? deptObj.icon+' '+deptObj.name : deptId;
+    opts += `<optgroup label="${deptLabel}">`;
+    people.forEach(([uname,u])=>{
+      opts += `<option value="${uname}"${validOwner===uname?' selected':''}>${u.name}</option>`;
+    });
+    opts += `</optgroup>`;
   });
   return opts;
 }
