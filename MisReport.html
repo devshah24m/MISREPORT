@@ -3605,7 +3605,10 @@ function _renderFEFields(){
   const dept = DEPTS.find(d=>d.id===_feActiveDept);
 
   const rows = fields.map((f,i)=>{
-    const ownerUser = f.owner ? (getUsers()[f.owner]||null) : null;
+    const users = getUsers();
+    const deptPeople = Object.entries(users).filter(([uname,u])=>u.role==='hod'&&u.dept===_feActiveDept);
+    const validOwner = deptPeople.some(([uname])=>uname===f.owner) ? f.owner : null;
+    const ownerUser = validOwner ? (users[validOwner]||null) : null;
     const ownerBadge = ownerUser
       ? `<span class="fe-owner-badge" title="Assigned to ${ownerUser.name}"><span class="fe-owner-av">${ownerUser.name.charAt(0).toUpperCase()}</span><span class="fe-owner-nm">${ownerUser.name}</span></span>`
       : `<span class="fe-owner-badge fe-owner-open" title="Open to anyone in dept"><span class="fe-owner-nm" style="color:var(--text3)">👥 Anyone</span></span>`;
@@ -3701,10 +3704,15 @@ function _feSetType(idx, type){
 
 function _feOwnerOptions(currentOwner){
   const users = getUsers();
-  const peopleInDept = Object.entries(users).filter(([,u])=>u.role==='hod' && u.dept===_feActiveDept);
-  let opts = `<option value=""${!currentOwner?' selected':''}>👥 Anyone in dept</option>`;
+  // Only show actual people (role=hod) in this dept — never show dept names
+  const peopleInDept = Object.entries(users).filter(([uname,u])=>
+    u.role==='hod' && u.dept===_feActiveDept && u.name && typeof u.name==='string'
+  );
+  // If currentOwner doesn't match any real user in this dept, treat as unassigned
+  const validOwner = peopleInDept.some(([uname])=>uname===currentOwner) ? currentOwner : null;
+  let opts = `<option value=""${!validOwner?' selected':''}>👥 Anyone in dept</option>`;
   peopleInDept.forEach(([uname,u])=>{
-    opts += `<option value="${uname}"${currentOwner===uname?' selected':''}>${u.name}</option>`;
+    opts += `<option value="${uname}"${validOwner===uname?' selected':''}>${u.name}</option>`;
   });
   return opts;
 }
