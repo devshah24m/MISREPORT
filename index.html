@@ -1237,10 +1237,7 @@ function refreshPage(){ if(_refreshFn)_refreshFn(); }
 // ═══════════════════════════════
 function renderDashboard(){
   _refreshFn=renderDashboard; destroyCharts();
-  const all=getData();
-  // If no data for current CM, fall back to latest month with data
-  if(!all[CM] || Object.keys(all[CM]).length === 0) CM = latestDataMonth();
-  const md=all[CM]||{};
+  const all=getData(); const md=all[CM]||{};
   const filled=DEPTS.filter(d=>Object.keys(md[d.id]||{}).filter(k=>!k.startsWith('_')).length>0).length;
   const biz=md.business||{}; const fin=md.finance||{}; const inv=md.investor||{}; const risk=md.risk||{}; const trd=md.trading||{};
   const main=document.getElementById('main');
@@ -1327,11 +1324,6 @@ function renderDeptAdmin(deptId,tab){
   if(tab){ _bossDeptTab=tab; if(tab!=='edit') _bossEditUnlocked=false; }
   _refreshFn=()=>renderDeptAdmin(deptId,_bossDeptTab); destroyCharts();
   const dept=DEPTS.find(d=>d.id===deptId);
-  // If no data for current CM in this dept, fall back to latest month with any data
-  if(!getDeptData(CM,deptId) || Object.keys(getDeptData(CM,deptId)).filter(k=>!k.startsWith('_')).length===0){
-    const latest = latestDataMonth();
-    if(latest !== CM) CM = latest;
-  }
   const data=getDeptData(CM,deptId);
   const hasData=Object.keys(data).filter(k=>!k.startsWith('_')).length>0;
   const main=document.getElementById('main');
