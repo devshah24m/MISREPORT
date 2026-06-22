@@ -323,6 +323,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .fe-field-label:focus{background:var(--accent-dim);border-radius:5px;padding:2px 6px}
 .fe-type-sel{border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;font-family:var(--font);font-size:11px;color:var(--text2);background:var(--surface);cursor:pointer;outline:none;flex-shrink:0}
 .fe-type-sel:focus{border-color:var(--accent)}
+.fe-owner-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(26,86,219,0.1);border:1px solid rgba(26,86,219,0.2);border-radius:20px;padding:3px 9px 3px 4px;flex-shrink:0;max-width:130px}
+.fe-owner-badge.fe-owner-open{background:rgba(0,0,0,0.04);border-color:var(--border)}
+.fe-owner-av{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fe-owner-nm{font-size:11px;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fe-del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;flex-shrink:0;padding:2px 4px;border-radius:4px;transition:all .15s;line-height:1}
 .fe-del-btn:hover{color:var(--red);background:var(--red-dim)}
 .fe-add-row{display:flex;align-items:center;gap:8px;max-width:720px}
@@ -3600,7 +3604,12 @@ function _renderFEFields(){
   const fields = schema[_feActiveDept] || [];
   const dept = DEPTS.find(d=>d.id===_feActiveDept);
 
-  const rows = fields.map((f,i)=>`
+  const rows = fields.map((f,i)=>{
+    const ownerUser = f.owner ? (getUsers()[f.owner]||null) : null;
+    const ownerBadge = ownerUser
+      ? `<span class="fe-owner-badge" title="Assigned to ${ownerUser.name}"><span class="fe-owner-av">${ownerUser.name.charAt(0).toUpperCase()}</span><span class="fe-owner-nm">${ownerUser.name}</span></span>`
+      : `<span class="fe-owner-badge fe-owner-open" title="Open to anyone in dept"><span class="fe-owner-nm" style="color:var(--text3)">👥 Anyone</span></span>`;
+    return `
     <div class="fe-field-row" id="ferow-${i}" draggable="true"
       ondragstart="_feDragStart(${i})" ondragover="_feDragOver(event,${i})" ondrop="_feDrop(event,${i})" ondragend="_feDragEnd()">
       <span class="fe-drag-handle" title="Drag to reorder">⠿</span>
@@ -3613,11 +3622,13 @@ function _renderFEFields(){
         <option value="count"${f.type==='count'?' selected':''}>∑ Count</option>
         <option value="text"${f.type==='text'?' selected':''}>✎ Text</option>
       </select>
+      ${ownerBadge}
       <select class="fe-type-sel" style="min-width:120px" onchange="_feSetOwner(${i},this.value)" title="Person responsible for this field">
         ${_feOwnerOptions(f.owner)}
       </select>
       <button class="fe-del-btn" onclick="_feDeleteField(${i})" title="Remove this field">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   area.innerHTML=`
     <div style="max-width:760px">
