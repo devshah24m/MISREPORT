@@ -1327,6 +1327,11 @@ function renderDeptAdmin(deptId,tab){
   if(tab){ _bossDeptTab=tab; if(tab!=='edit') _bossEditUnlocked=false; }
   _refreshFn=()=>renderDeptAdmin(deptId,_bossDeptTab); destroyCharts();
   const dept=DEPTS.find(d=>d.id===deptId);
+  // If no data for current CM in this dept, fall back to latest month with any data
+  if(!getDeptData(CM,deptId) || Object.keys(getDeptData(CM,deptId)).filter(k=>!k.startsWith('_')).length===0){
+    const latest = latestDataMonth();
+    if(latest !== CM) CM = latest;
+  }
   const data=getDeptData(CM,deptId);
   const hasData=Object.keys(data).filter(k=>!k.startsWith('_')).length>0;
   const main=document.getElementById('main');
