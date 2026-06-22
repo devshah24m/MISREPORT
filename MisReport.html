@@ -794,17 +794,13 @@ const DEPTS = [
 ];
 
 const DEFAULT_USERS = {
-  rohith:         {pass:'1',          role:'boss',   name:'Administrator',  dept:null},
-  hod_business:   {pass:'biz2024',   role:'hod',    name:'Business HOD',   dept:'business'},
-  hod_kyc:        {pass:'kyc2024',   role:'hod',    name:'KYC HOD',        dept:'kyc'},
-  hod_trading:    {pass:'trd2024',   role:'hod',    name:'Trading HOD',    dept:'trading'},
-  hod_risk:       {pass:'rsk2024',   role:'hod',    name:'Risk HOD',       dept:'risk'},
-  hod_compliance: {pass:'cmp2024',   role:'hod',    name:'Compliance HOD', dept:'compliance'},
-  hod_investor:   {pass:'inv2024',   role:'hod',    name:'Investor HOD',   dept:'investor'},
-  hod_finance:    {pass:'fin2024',   role:'hod',    name:'Finance HOD',    dept:'finance'},
-  hod_depository: {pass:'dep2024',   role:'hod',    name:'Depository HOD', dept:'depository'},
-  hod_hr:         {pass:'hr2024',    role:'hod',    name:'HR HOD',         dept:'hr'},
-  hod_it:         {pass:'it2024',    role:'hod',    name:'IT HOD',         dept:'it'},
+  rohith:    {pass:'1',        role:'boss', name:'Administrator', dept:null},
+  chandrika: {pass:'biz2024',  role:'hod',  name:'Chandrika',     dept:'business'},
+  ramkrishna:{pass:'biz2024',  role:'hod',  name:'Ramkrishna',    dept:'business'},
+  arun:      {pass:'fin2024',  role:'hod',  name:'Arun',          dept:'business'},
+  lala:      {pass:'trd2024',  role:'hod',  name:'lala',          dept:'trading'},
+  tulasi:    {pass:'cmp2024',  role:'hod',  name:'Tulasi',        dept:'trading'},
+  devi:      {pass:'rsk2024',  role:'hod',  name:'Devi',          dept:'trading'},
 };
 
 function getUsers(){ try{ const u=JSON.parse(localStorage.getItem(PWD_STORE)); return u||DEFAULT_USERS; }catch(e){return DEFAULT_USERS;} }
@@ -958,9 +954,9 @@ function getFieldFmt(key){ return getFieldFormats()[key]||'number'; }
 const FIELD_SCHEMA_KEY = 'mis_nbs_field_schema';
 
 const DEFAULT_FIELD_SCHEMA = {
-  business:[{label:'Active Clients',key:'active_clients',type:'number'},{label:'New Accounts Opened',key:'new_accounts',type:'count'},{label:'Dormant Accounts Activated',key:'dormant_activated',type:'count'},{label:'NSE Turnover — Cash (₹)',key:'nse_cash',type:'currency'},{label:'NSE Turnover — F&O (₹)',key:'nse_fo',type:'currency'},{label:'BSE Turnover (₹)',key:'bse_turnover',type:'currency'},{label:'Commodity Turnover (₹)',key:'commodity_turnover',type:'currency'},{label:'Total Brokerage Earned (₹)',key:'total_brokerage',type:'currency'},{label:'DP Revenue (₹)',key:'dp_revenue',type:'currency'},{label:'Other Income (₹)',key:'other_income',type:'currency'},{label:'Observations',key:'observations',type:'text'}],
+  business:[{label:'Active Clients',key:'active_clients',type:'number',owner:'chandrika'},{label:'New Accounts Opened',key:'new_accounts',type:'count',owner:'chandrika'},{label:'Dormant Accounts Activated',key:'dormant_activated',type:'count',owner:'chandrika'},{label:'NSE Turnover — Cash (₹)',key:'nse_cash',type:'currency',owner:'ramkrishna'},{label:'NSE Turnover — F&O (₹)',key:'nse_fo',type:'currency',owner:'ramkrishna'},{label:'BSE Turnover (₹)',key:'bse_turnover',type:'currency',owner:'ramkrishna'},{label:'Commodity Turnover (₹)',key:'commodity_turnover',type:'currency',owner:'ramkrishna'},{label:'Total Brokerage Earned (₹)',key:'total_brokerage',type:'currency',owner:'ramkrishna'},{label:'DP Revenue (₹)',key:'dp_revenue',type:'currency',owner:'arun'},{label:'Other Income (₹)',key:'other_income',type:'currency',owner:'arun'},{label:'Observations',key:'observations',type:'text',owner:null}],
   kyc:[{label:'New KYC Registered',key:'new_kyc',type:'count'},{label:'KYC Rejected',key:'kyc_rejected',type:'count'},{label:'IPV Pending',key:'ipv_pending',type:'count'},{label:'CKYC Pending',key:'ckyc_pending',type:'count'},{label:'Modification Requests',key:'mod_requests',type:'count'},{label:'Accounts Closed',key:'accounts_closed',type:'count'},{label:'Observations',key:'major_obs',type:'text'}],
-  trading:[{label:'Total Trades',key:'total_trades',type:'number'},{label:'Algo Trades',key:'algo_trades',type:'number'},{label:'Institutional Trades',key:'inst_trades',type:'number'},{label:'Retail Trades',key:'retail_trades',type:'number'},{label:'Client Code Modifications',key:'ccm',type:'count'},{label:'Bulk Deals',key:'bulk_deals',type:'count'},{label:'Block Deals',key:'block_deals',type:'count'},{label:'RMS Square Off Cases',key:'rms_squareoff',type:'count'},{label:'Top Clients (Text)',key:'top_clients',type:'text'}],
+  trading:[{label:'Total Trades',key:'total_trades',type:'number',owner:'lala'},{label:'Algo Trades',key:'algo_trades',type:'number',owner:'lala'},{label:'Institutional Trades',key:'inst_trades',type:'number',owner:'lala'},{label:'Retail Trades',key:'retail_trades',type:'number',owner:'lala'},{label:'Client Code Modifications',key:'ccm',type:'count',owner:'tulasi'},{label:'Bulk Deals',key:'bulk_deals',type:'count',owner:'tulasi'},{label:'Block Deals',key:'block_deals',type:'count',owner:'tulasi'},{label:'RMS Square Off Cases',key:'rms_squareoff',type:'count',owner:'devi'},{label:'Top Clients (Text)',key:'top_clients',type:'text',owner:null}],
   risk:[{label:'Margin Shortfall Cases',key:'margin_shortfall',type:'count'},{label:'MTM Loss Cases',key:'mtm_loss',type:'count'},{label:'Exposure Limit Breaches',key:'exposure_breach',type:'count'},{label:'Debit Balance Clients',key:'debit_balance',type:'count'},{label:'Peak Margin Penalty (₹)',key:'peak_penalty',type:'currency'},{label:'Auction Cases',key:'auction_cases',type:'count'},{label:'Suspicious Trading Alerts',key:'suspicious_alerts',type:'count'},{label:'RMS Observations',key:'rms_obs',type:'text'}],
   compliance:[{label:'Daily Margin Reporting',key:'daily_margin',type:'count'},{label:'Client Fund Segregation',key:'fund_seg',type:'count'},{label:'Investor Complaints Filed',key:'inv_comp_filed',type:'count'},{label:'Exchange Inspection Reply',key:'exchange_reply',type:'count'},{label:'Internal Audit Compliance',key:'internal_audit',type:'count'},{label:'PMLA Alerts Reviewed',key:'pmla',type:'count'},{label:'STR Filed',key:'str_filed',type:'count'},{label:'Penalties / Notices',key:'penalties',type:'count'}],
   investor:[{label:'Complaints Opening Balance',key:'complaints_begin',type:'count'},{label:'Complaints Received',key:'complaints_received',type:'count'},{label:'Complaints Resolved',key:'complaints_resolved',type:'count'},{label:'Complaints Pending at End',key:'complaints_pending_end',type:'count'},{label:'Unauthorized Trading',key:'unauth_trading',type:'count'},{label:'Delay in Payout',key:'delay_payout',type:'count'},{label:'Margin Issues',key:'margin_issues',type:'count'},{label:'DP Related',key:'dp_related',type:'count'},{label:'Others',key:'other_complaints',type:'count'}],
@@ -1154,7 +1150,7 @@ function initApp(){
   const deptObj=DEPTS.find(d=>d.id===CU.dept);
   document.getElementById('sb-dept').textContent=deptObj?deptObj.short:'All Departments';
   const pill=document.getElementById('sb-pill');
-  pill.textContent=CU.role==='boss'?'ADMINISTRATOR':'DEPT HEAD';
+  pill.textContent=CU.role==='boss'?'ADMINISTRATOR':'TEAM MEMBER';
   pill.className='role-pill '+(CU.role==='boss'?'rp-boss':'rp-hod');
   buildNav();
 }
@@ -1170,7 +1166,7 @@ function buildNav(){
     addNavSection('Management');
     addNavBtn('nav-export','⬇️','Export Report',()=>renderExport());
     addNavBtn('nav-consolidated','📋','Consolidated Table',()=>renderConsolidatedTable());
-    addNavBtn('nav-passwords','🔐','Manage Users',()=>renderPasswords());
+    addNavBtn('nav-passwords','🔐','Manage People',()=>renderPasswords());
     addNavBtn('nav-fields','⚙️','Manage Fields',()=>renderFieldEditor());
     setActiveNav('nav-dashboard');
     renderDashboard();
@@ -1407,15 +1403,49 @@ function _renderBossViewTab(deptId,data,dept,hasData){
     html = `<div class="card card-p"><div class="card-title" style="margin-bottom:12px">${dept?dept.icon+' '+dept.name:deptId} — ${fmtMonth(CM)}</div><table class="tbl" style="width:100%"><tbody>${rows}</tbody></table></div>`;
   }
 
-  body.innerHTML = html;
+  body.innerHTML = buildFieldAttributionHtml(data) + html;
   setTimeout(()=>buildDeptCharts(deptId,data),100);
 }
 
+// Builds a small panel showing which person last edited which field, for admin visibility
+function buildFieldAttributionHtml(data){
+  const meta = data._fieldMeta;
+  if(!meta || Object.keys(meta).length===0) return '';
+  const allSchemas = getFieldSchema();
+  // Find label for a key across all dept schemas (field keys are unique enough in practice)
+  function labelFor(key){
+    for(const dId in allSchemas){
+      const f=(allSchemas[dId]||[]).find(x=>x.key===key);
+      if(f) return f.label;
+    }
+    return key;
+  }
+  const rows = Object.entries(meta).map(([key,m])=>{
+    const when = m.at ? new Date(m.at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)">
+      <span style="color:var(--text2)">${labelFor(key)}</span>
+      <span style="color:var(--text3);white-space:nowrap">👤 ${m.by||'Unknown'} ${when?'· '+when:''}</span>
+    </div>`;
+  }).join('');
+  return `<div class="card card-p fade-up" style="margin-bottom:14px;background:var(--surface2)">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👥 Last Edited By</div>
+    ${rows}
+  </div>`;
+}
+
 function saveBossForm(deptId,submit){
-  const data={};
-  document.querySelectorAll('[id^="f_"]').forEach(el=>{ const key=el.id.replace('f_',''); data[key]=el.tagName==='SELECT'?el.value:el.value.trim(); });
-  if(submit){ const vals=Object.values(data).filter(v=>v!==''); if(vals.length<1){ showToast('Please fill at least one field','error'); return; } data._submitted=new Date().toISOString(); }
-  setDeptData(CM,deptId,data);
+  const newVals={};
+  document.querySelectorAll('[id^="f_"]').forEach(el=>{ const key=el.id.replace('f_',''); newVals[key]=el.tagName==='SELECT'?el.value:el.value.trim(); });
+  if(submit){ const vals=Object.values(newVals).filter(v=>v!==''); if(vals.length<1){ showToast('Please fill at least one field','error'); return; } }
+  const existing=getDeptData(CM,deptId);
+  const merged={...existing, ...newVals};
+  if(submit) merged._submitted=new Date().toISOString();
+  const fieldMeta={...(existing._fieldMeta||{})};
+  const who = (CU.name||'Administrator') + ' (Admin)';
+  const when = new Date().toISOString();
+  Object.keys(newVals).forEach(k=>{ fieldMeta[k]={by:who, at:when}; });
+  merged._fieldMeta=fieldMeta;
+  setDeptData(CM,deptId,merged);
   showToast(submit?`✓ ${DEPTS.find(d=>d.id===deptId)?.short} data saved!`:'Draft saved','success');
   renderDeptAdmin(deptId,_bossDeptTab);
 }
@@ -2166,23 +2196,48 @@ function renderHodFormBody(s){
   document.getElementById('hod-form-body').innerHTML=fn(s);
 }
 
+// Returns true if the current user may edit this field key (boss edits everything)
+function canEditField(key){
+  if(!CU || CU.role==='boss') return true;
+  const schema = getDeptSchema(CU.dept);
+  const f = schema.find(x=>x.key===key);
+  if(!f || !f.owner) return true; // unassigned = anyone in dept can edit
+  return f.owner === CU.username;
+}
+function fieldOwnerName(key){
+  const schema = getDeptSchema(CU.dept);
+  const f = schema.find(x=>x.key===key);
+  if(!f || !f.owner) return null;
+  const u = getUsers()[f.owner];
+  return u ? u.name : null;
+}
+
 function fi(label,key,s,type='text'){
   const val=s[key]!==undefined&&s[key]!==null?s[key]:'';
   const badge = type==='number' ? fmtBadgeHtml(key,'edit') : '';
+  const editable = canEditField(key);
+  const ownerName = !editable ? fieldOwnerName(key) : null;
   // No separate preview div — just the input
   const oninput = type==='number' ? `oninput="livePreview(this,'${key}')"` : '';
   // For number fields show formatted value inline below
   const fmtHint = (type==='number' && val!=='' && !isNaN(Number(val)))
     ? `<div class="num-preview">${fmtFieldVal(val,key)}</div>` : `<div class="num-preview"></div>`;
-  return `<div class="fg"><label><span>${label}</span>${badge}</label><input type="${type}" id="f_${key}" value="${val}" placeholder="${label.replace(/[()₹]/g,'').trim()}" ${oninput} />${type==='number'?fmtHint:''}</div>`;
+  const lockNote = !editable ? `<span style="font-size:10px;color:var(--text3);font-weight:400">🔒 ${ownerName||'Other person'}</span>` : '';
+  return `<div class="fg"><label><span>${label}</span>${badge}${lockNote}</label><input type="${type}" id="f_${key}" value="${val}" placeholder="${label.replace(/[()₹]/g,'').trim()}" ${oninput} ${!editable?'disabled style="opacity:.55;cursor:not-allowed"':''} />${type==='number'?fmtHint:''}</div>`;
 }
 function fs(label,key,s,opts){
   const val=s[key]||'';
-  return `<div class="fg"><label>${label}</label><select id="f_${key}"><option value="">— Select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  const editable = canEditField(key);
+  const ownerName = !editable ? fieldOwnerName(key) : null;
+  const lockNote = !editable ? `<span style="font-size:10px;color:var(--text3);font-weight:400">🔒 ${ownerName||'Other person'}</span>` : '';
+  return `<div class="fg"><label>${label}${lockNote}</label><select id="f_${key}" ${!editable?'disabled style="opacity:.55;cursor:not-allowed"':''}><option value="">— Select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
 }
 function ft(label,key,s,placeholder=''){
   const val=s[key]||'';
-  return `<div class="fg" style="grid-column:1/-1"><label>${label}</label><textarea id="f_${key}" placeholder="${placeholder}">${val}</textarea></div>`;
+  const editable = canEditField(key);
+  const ownerName = !editable ? fieldOwnerName(key) : null;
+  const lockNote = !editable ? `<span style="font-size:10px;color:var(--text3);font-weight:400">🔒 ${ownerName||'Other person'}</span>` : '';
+  return `<div class="fg" style="grid-column:1/-1"><label>${label}${lockNote}</label><textarea id="f_${key}" placeholder="${placeholder}" ${!editable?'disabled style="opacity:.55;cursor:not-allowed"':''}>${val}</textarea></div>`;
 }
 function sec(title,icon){ return `<div class="form-section-title">${icon} ${title}</div>`; }
 
@@ -2289,13 +2344,27 @@ function hodIT(s){ const st=['Completed','Pending','N/A']; const yn=['Yes','No']
 
 function collectHodData(){
   const data={};
-  document.querySelectorAll('[id^="f_"]').forEach(el=>{ const key=el.id.replace('f_',''); data[key]=el.tagName==='SELECT'?el.value:el.value.trim(); });
+  document.querySelectorAll('[id^="f_"]').forEach(el=>{
+    if(el.disabled) return; // don't touch fields the current user doesn't own
+    const key=el.id.replace('f_','');
+    data[key]=el.tagName==='SELECT'?el.value:el.value.trim();
+  });
   return data;
 }
 function saveHodForm(submit){
-  const data=collectHodData();
-  if(submit){ const vals=Object.values(data).filter(v=>v!==''); if(vals.length<2){ showToast('Please fill at least some fields before submitting','error'); return; } data._submitted=new Date().toISOString(); }
-  setDeptData(CM,CU.dept,data);
+  const newVals=collectHodData();
+  if(submit){ const vals=Object.values(newVals).filter(v=>v!==''); if(vals.length<2){ showToast('Please fill at least some fields before submitting','error'); return; } }
+  // Merge with existing saved data so fields owned by other people aren't lost
+  const existing=getDeptData(CM,CU.dept);
+  const merged={...existing, ...newVals};
+  if(submit) merged._submitted=new Date().toISOString();
+  // Track who last edited each field (for admin "last edited by" view)
+  const fieldMeta={...(existing._fieldMeta||{})};
+  const who = CU.name + (CU.username?` (@${CU.username})`:'');
+  const when = new Date().toISOString();
+  Object.keys(newVals).forEach(k=>{ fieldMeta[k]={by:who, at:when}; });
+  merged._fieldMeta=fieldMeta;
+  setDeptData(CM,CU.dept,merged);
   showToast(submit?'✓ Report submitted successfully!':'Draft saved','success');
   if(submit)renderHodForm();
 }
@@ -3544,6 +3613,9 @@ function _renderFEFields(){
         <option value="count"${f.type==='count'?' selected':''}>∑ Count</option>
         <option value="text"${f.type==='text'?' selected':''}>✎ Text</option>
       </select>
+      <select class="fe-type-sel" style="min-width:120px" onchange="_feSetOwner(${i},this.value)" title="Person responsible for this field">
+        ${_feOwnerOptions(f.owner)}
+      </select>
       <button class="fe-del-btn" onclick="_feDeleteField(${i})" title="Remove this field">✕</button>
     </div>`).join('');
 
@@ -3576,7 +3648,7 @@ function _feAddField(){
   if(!label){ showToast('Enter a field name first','warn'); inp.focus(); return; }
   const schema = _feGetSchema();
   const key = labelToKey(label);
-  schema[_feActiveDept] = [...(schema[_feActiveDept]||[]), {label, key, type: typeSel.value}];
+  schema[_feActiveDept] = [...(schema[_feActiveDept]||[]), {label, key, type: typeSel.value, owner: null}];
   inp.value='';
   _feSave(schema);
 }
@@ -3613,6 +3685,27 @@ function _feSetType(idx, type){
     // Also update the FORMAT_DEFAULTS store so display matches
     setFieldFormat(fields[idx].key, type==='text'?'number':type);
     showToast('✓ Type updated','success');
+  }
+}
+
+function _feOwnerOptions(currentOwner){
+  const users = getUsers();
+  const peopleInDept = Object.entries(users).filter(([,u])=>u.role==='hod' && u.dept===_feActiveDept);
+  let opts = `<option value=""${!currentOwner?' selected':''}>👥 Anyone in dept</option>`;
+  peopleInDept.forEach(([uname,u])=>{
+    opts += `<option value="${uname}"${currentOwner===uname?' selected':''}>${u.name}</option>`;
+  });
+  return opts;
+}
+
+function _feSetOwner(idx, owner){
+  const schema = _feGetSchema();
+  const fields = schema[_feActiveDept]||[];
+  if(fields[idx]){
+    fields[idx] = {...fields[idx], owner: owner||null};
+    schema[_feActiveDept] = fields;
+    saveFieldSchema(schema);
+    showToast(owner?'✓ Field assigned':'✓ Field opened to anyone in dept','success');
   }
 }
 
@@ -3656,7 +3749,7 @@ function renderPasswords(){
   _refreshFn=null; destroyCharts();
   const users=getUsers();
   const main=document.getElementById('main');
-  // Boss can only manage HOD users
+  // Boss manages individual people (any number per department)
   const hodUsers=Object.entries(users).filter(([,udata])=>udata.role==='hod');
   const hodCards=hodUsers.map(([uname,udata])=>{
     const dept=udata.dept?DEPTS.find(d=>d.id===udata.dept):null;
@@ -3666,12 +3759,13 @@ function renderPasswords(){
         <div class="pwd-info">
           <div class="pwd-name">${udata.name} <span style="font-weight:400;font-size:12px;color:var(--text3)">@${uname}</span></div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-            <span class="badge badge-green" style="font-size:10px">DEPT HEAD</span>
-            ${dept?`<span style="font-size:11px;color:var(--text3)">${dept.icon} ${dept.name}</span>`:''}
+            <span class="badge badge-green" style="font-size:10px">TEAM MEMBER</span>
+            ${dept?`<span style="font-size:11px;color:var(--text3)">${dept.icon} ${dept.name}</span>`:'<span style="font-size:11px;color:var(--red)">⚠ No department</span>'}
           </div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="toggleCredEdit('${uname}')">✏️ Edit Credentials</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleCredEdit('${uname}')">✏️ Edit</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:rgba(224,36,36,0.3)" onclick="deletePerson('${uname}')">🗑 Remove</button>
         </div>
       </div>
       <div class="pwd-edit-area" id="crede-${uname}">
@@ -3679,6 +3773,12 @@ function renderPasswords(){
           <div class="form-grid-2" style="margin-bottom:10px">
             <div class="fg"><label>Display Name</label><input type="text" id="en-${uname}" value="${udata.name}" placeholder="Full name" /></div>
             <div class="fg"><label>Username</label><input type="text" id="eu-${uname}" value="${uname}" placeholder="Login username" autocomplete="off" /></div>
+          </div>
+          <div class="form-grid-2" style="margin-bottom:10px">
+            <div class="fg"><label>Department</label>
+              <select id="ed-${uname}">${DEPTS.map(d=>`<option value="${d.id}"${udata.dept===d.id?' selected':''}>${d.icon} ${d.name}</option>`).join('')}</select>
+            </div>
+            <div></div>
           </div>
           <div class="form-grid-2">
             <div class="fg"><label>New Password <span style="font-weight:400;color:var(--text3)">(leave blank to keep current)</span></label><input type="password" id="np-${uname}" placeholder="New password" autocomplete="new-password" /></div>
@@ -3692,10 +3792,93 @@ function renderPasswords(){
       </div>
     </div>`;
   }).join('');
+
   main.innerHTML=`
-  <div class="ph fade-up"><div><div class="ph-title">Manage HOD Credentials</div><div class="ph-sub">Assign username, display name and password for department heads</div></div></div>
-  <div class="info-box info-blue fade-up" style="max-width:860px">ℹ️ You can change the username, display name, and password for any HOD. Click <strong>Edit Credentials</strong> on any card.</div>
-  <div style="max-width:860px" class="fade-up-2">${hodCards}</div>`;
+  <div class="ph fade-up">
+    <div><div class="ph-title">Manage People</div><div class="ph-sub">Add individual team members — each logs in with their own username, and is tagged to a department</div></div>
+    <div class="ph-actions"><button class="btn btn-primary btn-sm" onclick="toggleAddPerson()">＋ Add Person</button></div>
+  </div>
+  <div class="info-box info-blue fade-up" style="max-width:860px">ℹ️ Any number of people can belong to the same department. Use <strong>Manage Fields</strong> to assign specific metrics to specific people within a department.</div>
+  <div class="pwd-card fade-up-2" id="add-person-area" style="display:none;max-width:860px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:10px">＋ New Team Member</div>
+    <div class="form-grid-2" style="margin-bottom:10px">
+      <div class="fg"><label>Full Name</label><input type="text" id="ap-name" placeholder="e.g. Chandrika Reddy" /></div>
+      <div class="fg"><label>Username</label><input type="text" id="ap-username" placeholder="e.g. chandrika" autocomplete="off" /></div>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:10px">
+      <div class="fg"><label>Department</label>
+        <select id="ap-dept">${DEPTS.map(d=>`<option value="${d.id}">${d.icon} ${d.name}</option>`).join('')}</select>
+      </div>
+      <div></div>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:12px">
+      <div class="fg"><label>Password</label><input type="password" id="ap-pass" placeholder="Set a password" autocomplete="new-password" /></div>
+      <div class="fg"><label>Confirm Password</label><input type="password" id="ap-pass2" placeholder="Confirm password" autocomplete="new-password" /></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="addPerson()">✓ Create Login</button>
+      <button class="btn btn-outline btn-sm" onclick="toggleAddPerson()">Cancel</button>
+    </div>
+  </div>
+  <div style="max-width:860px" class="fade-up-2">${hodCards || '<div class="info-box info-blue">No team members yet. Click "＋ Add Person" to create the first login.</div>'}</div>`;
+}
+
+function toggleAddPerson(){
+  const area=document.getElementById('add-person-area');
+  if(!area) return;
+  const opening = area.style.display==='none';
+  area.style.display = opening ? 'block' : 'none';
+  if(opening) document.getElementById('ap-name').focus();
+}
+
+function addPerson(){
+  if(!CU||CU.role!=='boss'){ showToast('Access denied','error'); return; }
+  const name=document.getElementById('ap-name').value.trim();
+  let uname=document.getElementById('ap-username').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const dept=document.getElementById('ap-dept').value;
+  const pass=document.getElementById('ap-pass').value;
+  const pass2=document.getElementById('ap-pass2').value;
+
+  if(!name){ showToast('Enter a full name','error'); return; }
+  if(!uname){ showToast('Enter a username','error'); return; }
+  if(!dept){ showToast('Select a department','error'); return; }
+  if(!pass){ showToast('Set a password','error'); return; }
+  if(pass!==pass2){ showToast('Passwords do not match','error'); return; }
+
+  const users=getUsers();
+  if(users[uname]){ showToast('Username already taken','error'); return; }
+
+  users[uname]={pass, role:'hod', name, dept};
+  saveUsers(users);
+  showToast(`✓ ${name} added to ${DEPTS.find(d=>d.id===dept)?.name||dept}`,'success');
+
+  document.getElementById('ap-name').value='';
+  document.getElementById('ap-username').value='';
+  document.getElementById('ap-pass').value='';
+  document.getElementById('ap-pass2').value='';
+  toggleAddPerson();
+  renderPasswords();
+}
+
+function deletePerson(uname){
+  if(!CU||CU.role!=='boss'){ showToast('Access denied','error'); return; }
+  const users=getUsers();
+  const person=users[uname];
+  if(!person) return;
+  if(!confirm(`Remove ${person.name} (@${uname})? They will no longer be able to log in. Any fields assigned to them will become open to anyone in their department.`)) return;
+
+  delete users[uname];
+  saveUsers(users);
+
+  // Unassign any schema fields owned by this person
+  const schema=getFieldSchema();
+  Object.keys(schema).forEach(deptId=>{
+    schema[deptId]=(schema[deptId]||[]).map(f=> f.owner===uname ? {...f, owner:null} : f);
+  });
+  saveFieldSchema(schema);
+
+  showToast(`✓ ${person.name} removed`,'success');
+  renderPasswords();
 }
 
 function toggleCredEdit(uname){
@@ -3709,6 +3892,7 @@ function saveCredentials(oldUname){
   if(!CU||CU.role!=='boss'){ showToast('Access denied','error'); return; }
   const newName=document.getElementById('en-'+oldUname).value.trim();
   const newUname=document.getElementById('eu-'+oldUname).value.trim().toLowerCase().replace(/\s+/g,'_');
+  const newDept=document.getElementById('ed-'+oldUname).value;
   const np=document.getElementById('np-'+oldUname).value;
   const cp=document.getElementById('cp-'+oldUname).value;
 
@@ -3724,12 +3908,17 @@ function saveCredentials(oldUname){
   }
 
   // Build updated user data
-  const updatedUser={...users[oldUname], name:newName};
+  const updatedUser={...users[oldUname], name:newName, dept:newDept};
   if(np) updatedUser.pass=np;
 
-  // If username changed: delete old key, add new key
+  // If username changed: delete old key, add new key, and re-point any owned fields
   if(newUname!==oldUname){
     delete users[oldUname];
+    const schema=getFieldSchema();
+    Object.keys(schema).forEach(deptId=>{
+      schema[deptId]=(schema[deptId]||[]).map(f=> f.owner===oldUname ? {...f, owner:newUname} : f);
+    });
+    saveFieldSchema(schema);
   }
   users[newUname]=updatedUser;
 
@@ -3836,3 +4025,4 @@ async function debugSync(){
 </script>
 </body>
 </html>
+
