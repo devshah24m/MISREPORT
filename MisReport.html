@@ -516,17 +516,19 @@ async function gsPullAll(){
   const normalizedData = normalizeDataKeys(res.data || {});
   localStorage.setItem(STORE, JSON.stringify(normalizedData));
   if(res.users) localStorage.setItem(PWD_STORE, JSON.stringify(res.users));
-  if(res.fmts){
-    // Extract _schema if embedded
-    if(res.fmts._schema){
-      try{ localStorage.setItem(FIELD_SCHEMA_KEY, res.fmts._schema); }catch(e){}
-      const fmtsClean = {...res.fmts}; delete fmtsClean._schema;
-      localStorage.setItem(FORMAT_STORE_KEY, JSON.stringify(fmtsClean));
-    } else {
-      localStorage.setItem(FORMAT_STORE_KEY, JSON.stringify(res.fmts));
-    }
+  // Load schema from dedicated MIS_Schema sheet (preferred)
+  if(res.schema){
+    try{ localStorage.setItem(FIELD_SCHEMA_KEY, JSON.stringify(res.schema)); }catch(e){}
   }
-  console.log('[GS] Pulled data:', Object.keys(normalizedData).length, 'months', Object.keys(normalizedData));
+  if(res.fmts){
+    // Legacy: extract _schema if embedded in fmts (only used if MIS_Schema sheet is empty)
+    if(res.fmts._schema && !res.schema){
+      try{ localStorage.setItem(FIELD_SCHEMA_KEY, res.fmts._schema); }catch(e){}
+    }
+    const fmtsClean = {...res.fmts}; delete fmtsClean._schema;
+    localStorage.setItem(FORMAT_STORE_KEY, JSON.stringify(fmtsClean));
+  }
+  console.log('[GS] Pulled data:', Object.keys(normalizedData).length, 'months,', 'users:', !!res.users, 'schema:', !!res.schema);
   return {...res, data: normalizedData};
 }
 
@@ -984,8 +986,10 @@ function getFieldSchema(){
 
 function saveFieldSchema(schema){
   localStorage.setItem(FIELD_SCHEMA_KEY, JSON.stringify(schema));
-  // Sync to Google Sheets via fmts channel (reuse existing)
-  if(GAS_URL){ gsPushFmts({...getFieldFormats(), _schema: JSON.stringify(schema)}).catch(e=>console.warn('Schema sync:',e)); }
+  // Sync schema to dedicated MIS_Schema sheet
+  if(GAS_URL){ gasCall('setSchema', { schema: JSON.stringify(schema) }).catch(e=>console.warn('Schema sync:',e)); }
+  // Also push fmts without _schema embedded (clean separation)
+  if(GAS_URL){ gsPushFmts(getFieldFormats()).catch(e=>console.warn('Fmts sync:',e)); }
 }
 
 function getDeptSchema(deptId){
