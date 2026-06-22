@@ -1166,6 +1166,7 @@ function buildNav(){
     addNavSection('Management');
     addNavBtn('nav-export','⬇️','Export Report',()=>renderExport());
     addNavBtn('nav-consolidated','📋','Consolidated Table',()=>renderConsolidatedTable());
+    addNavBtn('nav-byperson','👤','By Person',()=>renderByPerson());
     addNavBtn('nav-passwords','🔐','Manage People',()=>renderPasswords());
     addNavBtn('nav-fields','⚙️','Manage Fields',()=>renderFieldEditor());
     setActiveNav('nav-dashboard');
@@ -1173,12 +1174,13 @@ function buildNav(){
   } else {
     addNavSection('My Department');
     const d=DEPTS.find(x=>x.id===CU.dept);
-    addNavBtn('nav-hod-entry',d?d.icon:'📝','Enter Data',()=>renderHodTabularEntry());
+    addNavBtn('nav-my-fields','✏️','My Fields',()=>renderMyFields());
+    addNavBtn('nav-hod-entry',d?d.icon:'📝','Full Dept Entry',()=>renderHodTabularEntry());
     addNavBtn('nav-view','📊','Monthly Summary',()=>renderTabularDeptView(CU.dept,'nav-view'));
     addNavBtn('nav-history','📅','My History',()=>renderHodHistory());
-    setActiveNav('nav-hod-entry');
+    setActiveNav('nav-my-fields');
     // Only render immediately if NOT using Google Sheets (avoids showing stale data before sync finishes)
-    if(!GAS_URL) renderHodTabularEntry();
+    if(!GAS_URL) renderMyFields();
   }
 }
 
@@ -4022,7 +4024,324 @@ async function debugSync(){
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// MY FIELDS — person-specific data entry view
+// Shows ONLY the fields assigned to the logged-in person,
+// grouped by month, with a clear "your responsibility" header.
+// ═══════════════════════════════════════════════════════
+function renderMyFields(fromM, toM) {
+  _refreshFn = renderMyFields; destroyCharts();
+  const dept = DEPTS.find(d => d.id === CU.dept);
+  const schema = getDeptSchema(CU.dept);
+  const myFields = schema.filter(f => f.owner === CU.username);
+  const allFields = schema.filter(f => !f.owner || f.owner !== CU.username);
+  const main = document.getElementById('main');
+
+  const poolAll = allMonths24();
+  const poolOldFirst = [...poolAll].reverse();
+
+  function latestDeptDataMonth() {
+    const store = getData();
+    const keys = Object.keys(store).filter(k => {
+      const d = store[k] && store[k][CU.dept];
+      return d && typeof d === 'object' && Object.keys(d).some(k2 => !k2.startsWith('_'));
+    });
+    if (keys.length === 0) return curMonth();
+    keys.sort((a, b) => b.localeCompare(a));
+    return keys[0];
+  }
+
+  if (!_hodRangeFrom) _hodRangeFrom = fromM || latestDeptDataMonth();
+  if (!_hodRangeTo)   _hodRangeTo   = toM   || latestDeptDataMonth();
+  if (fromM) _hodRangeFrom = fromM;
+  if (toM)   _hodRangeTo   = toM;
+
+  const fromOpts = poolOldFirst.map(m => `<option value="${m}" ${m===_hodRangeFrom?'selected':''}>${fmtMonth(m)}</option>`).join('');
+  const toOpts   = poolOldFirst.map(m => `<option value="${m}" ${m===_hodRangeTo?'selected':''}>${fmtMonth(m)}</option>`).join('');
+
+  function getEntryMonths(f, t) {
+    const all = [...poolAll].reverse();
+    const fi = all.indexOf(f), ti = all.indexOf(t);
+    if (fi < 0 || ti < 0 || fi > ti) return [f];
+    return all.slice(fi, ti + 1);
+  }
+  const entryMonths = getEntryMonths(_hodRangeFrom, _hodRangeTo);
+  const allStore = getData();
+
+  const isSelect = k => ['daily_margin','fund_seg','inv_comp_filed','exchange_reply','internal_audit','pmla','str_filed','backup_verify','dr_drill','antivirus'].includes(k);
+  const isText   = k => (schema.find(f=>f.key===k)||{}).type === 'text';
+  const selectOpts = ['Completed','Pending','Yes','No','N/A'];
+
+  function buildRows(fields, sectionLabel, sectionColor) {
+    if (!fields.length) return '';
+    let rows = `<tr class="section-header" style="background:linear-gradient(90deg,${sectionColor}22,${sectionColor}08)">
+      <td colspan="${entryMonths.length+1}" style="color:${sectionColor}">${sectionLabel}</td>
+    </tr>`;
+    fields.forEach(({label, key}) => {
+      const cells = entryMonths.map(m => {
+        const saved = (allStore[m] && allStore[m][CU.dept]) || {};
+        const approved = saved._approved;
+        const val = saved[key] !== undefined ? saved[key] : '';
+        if (isText(key)) {
+          return `<td style="min-width:180px"><textarea class="dealer-ta" data-month="${m}" data-key="${key}" ${approved?'disabled':''} style="width:100%;min-height:52px;resize:vertical;border:none;background:transparent;padding:7px 10px;font-family:var(--font);font-size:12px;outline:none;transition:background .15s${approved?';opacity:.5;cursor:not-allowed':''}" onfocus="this.style.background='rgba(26,86,219,0.06)'" onblur="this.style.background='transparent'" placeholder="…">${val}</textarea></td>`;
+        }
+        if (isSelect(key)) {
+          return `<td><select class="dealer-inp" data-month="${m}" data-key="${key}" ${approved?'disabled':''} style="${approved?'opacity:.5;cursor:not-allowed':''}">
+            <option value="">—</option>
+            ${selectOpts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+          </select></td>`;
+        }
+        return `<td class="num-cell" onclick="activateCell(this)" data-month="${m}" data-key="${key}" data-approved="${approved?'1':'0'}">
+          <div class="num-display${approved?' num-approved':''}">${isNumVal(val)?fmtFieldVal(val,key):'<span class="num-empty">—</span>'}</div>
+          <input type="number" class="dealer-inp num-input" data-month="${m}" data-key="${key}" value="${val}" placeholder="0" ${approved?'disabled':''} style="display:none" oninput="syncNumCell(this)" onblur="deactivateCell(this)" />
+        </td>`;
+      }).join('');
+      rows += `<tr><td>${label}${(!isText(key)&&!isSelect(key))?fmtBadgeHtml(key,'edit'):''}</td>${cells}</tr>`;
+    });
+    return rows;
+  }
+
+  const monthHeaders = entryMonths.map(m => {
+    const d = (allStore[m] && allStore[m][CU.dept]) || {};
+    const keys = Object.keys(d).filter(k => !k.startsWith('_')).length;
+    const chip = d._approved
+      ? `<div class="month-status-chip ms-approved">✓ Approved</div>`
+      : keys > 0 ? `<div class="month-status-chip ms-submitted">Saved</div>`
+      : `<div class="month-status-chip ms-pending">Empty</div>`;
+    return `<th class="month-col">${fmtMonthShort(m)}<br>${chip}</th>`;
+  }).join('');
+
+  const myRows    = buildRows(myFields,  `✏️ My Fields — ${CU.name}`, '#1a56db');
+  const otherRows = buildRows(allFields, `👥 Other Team Members' Fields (read-only)`, '#9ca3af');
+
+  main.innerHTML = `
+  <div class="ph fade-up">
+    <div style="display:flex;align-items:center;gap:13px">
+      <div style="width:44px;height:44px;border-radius:11px;background:${dept.colBg};display:flex;align-items:center;justify-content:center;font-size:18px">${dept.icon}</div>
+      <div>
+        <div class="ph-title">My Fields — ${CU.name}</div>
+        <div class="ph-sub">${dept.name} · ${myFields.length} field${myFields.length!==1?'s':''} assigned to you · ${entryMonths.length} month${entryMonths.length!==1?'s':''}</div>
+      </div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn btn-outline btn-sm" onclick="renderHodTabularEntry()">📋 Full Dept View</button>
+      <button class="btn btn-primary" onclick="saveMyFields()">💾 Save My Fields</button>
+    </div>
+  </div>
+
+  ${myFields.length === 0 ? `<div class="info-box info-gold fade-up">⚠️ No fields are currently assigned to you. Ask the Administrator to assign fields via <strong>Manage Fields</strong>.</div>` : ''}
+
+  <div class="card card-p fade-up" style="margin-bottom:16px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px">From Month</div>
+      <select class="month-sel" id="mf-range-from" style="min-width:170px" onchange="_hodRangeFrom=this.value;renderMyFields(this.value,_hodRangeTo)">${fromOpts}</select>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px">To Month</div>
+      <select class="month-sel" id="mf-range-to" style="min-width:170px" onchange="_hodRangeTo=this.value;renderMyFields(_hodRangeFrom,this.value)">${toOpts}</select>
+    </div>
+  </div>
+
+  <div class="card fade-up-2" style="padding:0;overflow:hidden">
+    <div class="entry-wrap">
+      <table class="tbl-entry">
+        <thead>
+          <tr>
+            <th style="text-align:left">Metric</th>
+            ${monthHeaders}
+          </tr>
+        </thead>
+        <tbody>
+          ${myRows}
+          ${otherRows}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;align-items:center" class="fade-up-3">
+    <button class="btn btn-primary" onclick="saveMyFields()">💾 Save My Fields</button>
+    <button class="btn btn-green" onclick="saveMyFields(true)">✓ Save &amp; Submit</button>
+    <span style="font-size:12px;color:var(--text3)">Only your assigned fields will be saved. Others' data is preserved.</span>
+  </div>`;
+}
+
+function saveMyFields(submit = false) {
+  const schema = getDeptSchema(CU.dept);
+  const myKeys = new Set(schema.filter(f => f.owner === CU.username).map(f => f.key));
+
+  const allMonthsInGrid = [...document.querySelectorAll('.dealer-inp[data-month],.dealer-ta[data-month]')]
+    .map(el => el.dataset.month)
+    .filter((v, i, a) => a.indexOf(v) === i);
+
+  const allStore = getData();
+  let saved = 0;
+
+  allMonthsInGrid.forEach(m => {
+    const existing = (allStore[m] && allStore[m][CU.dept]) || {};
+    if (existing._approved) return;
+
+    const newData = { ...existing };
+    document.querySelectorAll(`.dealer-inp[data-month="${m}"], .dealer-ta[data-month="${m}"]`).forEach(el => {
+      const key = el.dataset.key;
+      if (!myKeys.has(key)) return; // only save MY fields
+      const val = el.tagName === 'SELECT' ? el.value : el.value.trim();
+      if (val !== '') newData[key] = val;
+    });
+
+    // Track who filled each field
+    const fieldMeta = { ...(existing._fieldMeta || {}) };
+    const who = CU.name + (CU.username ? ` (@${CU.username})` : '');
+    const when = new Date().toISOString();
+    myKeys.forEach(k => { if (newData[k] !== undefined && newData[k] !== '') fieldMeta[k] = { by: who, at: when }; });
+    newData._fieldMeta = fieldMeta;
+
+    const hasValues = Object.keys(newData).filter(k => !k.startsWith('_')).length > 0;
+    if (hasValues) {
+      if (submit) newData._submitted = new Date().toISOString();
+      setDeptData(m, CU.dept, newData);
+      saved++;
+    }
+  });
+
+  showToast(saved > 0 ? `✓ Your fields saved for ${saved} month(s)` : 'No new data to save', saved > 0 ? 'success' : 'warn');
+  renderMyFields(_hodRangeFrom, _hodRangeTo);
+}
+
+
+// ═══════════════════════════════════════════════════════
+// BY PERSON — Boss view: see each person's contributions
+// ═══════════════════════════════════════════════════════
+function renderByPerson() {
+  _refreshFn = renderByPerson; destroyCharts();
+  const main = document.getElementById('main');
+  const users = getUsers();
+  const schema = getFieldSchema();
+  const allStore = getData();
+  const month = CM;
+
+  // Build person → { dept, fields, data } map
+  const personMap = {};
+  Object.entries(users).forEach(([uname, u]) => {
+    if (u.role === 'boss' || !u.dept) return;
+    const dept = DEPTS.find(d => d.id === u.dept);
+    const deptSchema = schema[u.dept] || [];
+    const myFields = deptSchema.filter(f => f.owner === uname);
+    const deptData = (allStore[month] && allStore[month][u.dept]) || {};
+    const fieldMeta = deptData._fieldMeta || {};
+
+    personMap[uname] = {
+      name: u.name,
+      dept: u.dept,
+      deptName: dept ? dept.name : u.dept,
+      deptIcon: dept ? dept.icon : '📊',
+      deptCol: dept ? dept.col : '#6b7280',
+      fields: myFields,
+      deptData,
+      fieldMeta,
+    };
+  });
+
+  const monthOpts = months18().map(m => `<option value="${m}" ${m===CM?'selected':''}>${fmtMonth(m)}</option>`).join('');
+
+  const personCards = Object.entries(personMap).map(([uname, p]) => {
+    const filled = p.fields.filter(f => {
+      const v = p.deptData[f.key];
+      return v !== undefined && v !== '';
+    });
+    const total = p.fields.length;
+    const pct = total > 0 ? Math.round((filled.length / total) * 100) : 0;
+    const statusColor = pct === 100 ? '#0e9f6e' : pct > 0 ? '#d97706' : '#9ca3af';
+
+    const rows = p.fields.map(f => {
+      const val = p.deptData[f.key];
+      const meta = p.fieldMeta[f.key];
+      const display = !hasVal(val) ? '<span style="color:#9ca3af">—</span>'
+        : f.type === 'currency' ? fmtCr(val)
+        : f.type === 'text' ? `<span style="color:#4b5563">${String(val).slice(0, 60)}${String(val).length>60?'…':''}</span>`
+        : fmtNum(val);
+      const when = meta && meta.at ? new Date(meta.at).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      return `<tr>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">${f.label}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;text-align:right">${display}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3);white-space:nowrap">${when}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card card-p" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:${p.deptCol}22;border:2px solid ${p.deptCol}44;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${p.deptCol}">
+          ${p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${p.name} <span style="font-size:11px;color:var(--text3);font-weight:400">@${uname}</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${p.deptIcon} ${p.deptName} · ${total} field${total!==1?'s':''} assigned</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:${statusColor}">${pct}%</div>
+          <div style="font-size:11px;color:var(--text3)">${filled.length}/${total} filled</div>
+          <div style="margin-top:4px;width:80px;height:4px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-left:auto">
+            <div style="height:100%;width:${pct}%;background:${statusColor};border-radius:3px"></div>
+          </div>
+        </div>
+      </div>
+      ${total === 0
+        ? `<div style="font-size:12px;color:var(--text3);padding:8px 0">No fields assigned yet — use <strong>Manage Fields</strong> to assign.</div>`
+        : `<table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:5px 12px;border-bottom:1.5px solid var(--border)">Field</th>
+              <th style="text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:5px 12px;border-bottom:1.5px solid var(--border)">Value</th>
+              <th style="text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:5px 12px;border-bottom:1.5px solid var(--border)">Last Updated</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`
+      }
+    </div>`;
+  }).join('');
+
+  // Unassigned fields summary
+  const unassignedByDept = {};
+  DEPTS.forEach(d => {
+    const deptSchema = schema[d.id] || [];
+    const unassigned = deptSchema.filter(f => !f.owner);
+    if (unassigned.length > 0) unassignedByDept[d.id] = { dept: d, fields: unassigned };
+  });
+  const unassignedHtml = Object.values(unassignedByDept).length > 0
+    ? `<div class="card card-p" style="margin-bottom:14px;background:var(--surface2)">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">⚠️ Unassigned Fields (anyone in the dept can fill these)</div>
+        ${Object.values(unassignedByDept).map(({dept, fields}) =>
+          `<div style="margin-bottom:8px">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${dept.icon} ${dept.name}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px">
+              ${fields.map(f=>`<span style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;color:var(--text2)">${f.label}</span>`).join('')}
+            </div>
+          </div>`
+        ).join('')}
+        <div style="margin-top:10px;font-size:12px;color:var(--text3)">Go to <strong>Manage Fields</strong> → select a dept → set Owner on each row to assign them.</div>
+      </div>`
+    : '';
+
+  main.innerHTML = `
+  <div class="ph fade-up">
+    <div>
+      <div class="ph-title">👤 By Person</div>
+      <div class="ph-sub">See each team member's assigned fields and what they've filled — ${fmtMonth(month)}</div>
+    </div>
+    <div class="ph-actions">
+      <select class="month-sel" onchange="CM=this.value;renderByPerson()">${monthOpts}</select>
+      <button class="btn btn-outline btn-sm" onclick="renderPasswords();setActiveNav('nav-passwords')">⚙️ Manage People</button>
+      <button class="btn btn-outline btn-sm" onclick="renderFieldEditor();setActiveNav('nav-fields')">⚙️ Assign Fields</button>
+    </div>
+  </div>
+
+  ${Object.keys(personMap).length === 0
+    ? `<div class="info-box info-gold fade-up">No team members yet. Add people via <strong>Manage People</strong> and assign fields via <strong>Manage Fields</strong>.</div>`
+    : personCards
+  }
+  ${unassignedHtml}`;
+}
+
+
+
 </script>
 </body>
 </html>
-
