@@ -3715,7 +3715,7 @@ function _feSetType(idx, type){
 function _feOwnerOptions(currentOwner){
   const users = getUsers();
   // Show all people in this department — filter by dept ID, not dept name
-  const peopleInDept = Object.entries(users).filter(([,u]) => u.dept === _feActiveDept);
+  const peopleInDept = Object.entries(users).filter(([,u]) => u.dept);
   let opts = `<option value=""${!currentOwner ? ' selected' : ''}>👥 Anyone in dept</option>`;
   peopleInDept.forEach(([uname, u]) => {
     opts += `<option value="${uname}"${currentOwner === uname ? ' selected' : ''}>${u.name}</option>`;
