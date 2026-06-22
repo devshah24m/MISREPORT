@@ -1237,7 +1237,10 @@ function refreshPage(){ if(_refreshFn)_refreshFn(); }
 // ═══════════════════════════════
 function renderDashboard(){
   _refreshFn=renderDashboard; destroyCharts();
-  const all=getData(); const md=all[CM]||{};
+  const all=getData();
+  // If no data for current CM, fall back to latest month with data
+  if(!all[CM] || Object.keys(all[CM]).length === 0) CM = latestDataMonth();
+  const md=all[CM]||{};
   const filled=DEPTS.filter(d=>Object.keys(md[d.id]||{}).filter(k=>!k.startsWith('_')).length>0).length;
   const biz=md.business||{}; const fin=md.finance||{}; const inv=md.investor||{}; const risk=md.risk||{}; const trd=md.trading||{};
   const main=document.getElementById('main');
