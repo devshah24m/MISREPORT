@@ -797,10 +797,15 @@ const DEFAULT_USERS = {
   rohith:    {pass:'1',        role:'boss', name:'Administrator', dept:null},
   chandrika: {pass:'biz2024',  role:'hod',  name:'Chandrika',     dept:'business'},
   ramkrishna:{pass:'biz2024',  role:'hod',  name:'Ramkrishna',    dept:'business'},
-  arun:      {pass:'fin2024',  role:'hod',  name:'Arun',          dept:'business'},
-  lala:      {pass:'trd2024',  role:'hod',  name:'lala',          dept:'trading'},
-  tulasi:    {pass:'cmp2024',  role:'hod',  name:'Tulasi',        dept:'trading'},
-  devi:      {pass:'rsk2024',  role:'hod',  name:'Devi',          dept:'trading'},
+  arun:      {pass:'fin2024',  role:'hod',  name:'Arun',          dept:'finance'},
+  lala:      {pass:'trd2024',  role:'hod',  name:'Lala',          dept:'trading'},
+  tulasi:    {pass:'cmp2024',  role:'hod',  name:'Tulasi',        dept:'compliance'},
+  devi:      {pass:'rsk2024',  role:'hod',  name:'Devi',          dept:'risk'},
+  mohan:     {pass:'rsk2024',  role:'hod',  name:'Mohan',         dept:'risk'},
+  yunus:     {pass:'dep2024',  role:'hod',  name:'Yunus',         dept:'depository'},
+  chhavi:    {pass:'dep2024',  role:'hod',  name:'Chhavi',        dept:'depository'},
+  sidhartha: {pass:'dep2024',  role:'hod',  name:'Sidhartha',     dept:'depository'},
+  chandana:  {pass:'hr2024',   role:'hod',  name:'Chandana',      dept:'hr'},
 };
 
 function getUsers(){ try{ const u=JSON.parse(localStorage.getItem(PWD_STORE)); return u||DEFAULT_USERS; }catch(e){return DEFAULT_USERS;} }
