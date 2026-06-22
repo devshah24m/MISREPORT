@@ -974,6 +974,22 @@ function getFieldSchema(){
     // Merge: use saved for any dept that exists, default for others
     const merged = JSON.parse(JSON.stringify(DEFAULT_FIELD_SCHEMA));
     Object.keys(saved).forEach(d=>{ merged[d]=saved[d]; });
+
+    // ── Sanitize corrupt owner values ───────────────────────────────────────
+    // If owner was accidentally set to a dept ID (e.g. 'business', 'trading')
+    // instead of a username, reset it to null so the dropdown shows correctly.
+    const deptIds = new Set(DEPTS.map(d=>d.id));
+    const validUsernames = new Set(Object.keys(getUsers()));
+    Object.keys(merged).forEach(deptId => {
+      merged[deptId] = (merged[deptId]||[]).map(f => {
+        if (f.owner && (deptIds.has(f.owner) || !validUsernames.has(f.owner))) {
+          return {...f, owner: null};
+        }
+        return f;
+      });
+    });
+    // ────────────────────────────────────────────────────────────────────────
+
     return merged;
   }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_FIELD_SCHEMA)); }
 }
@@ -3572,6 +3588,12 @@ function renderFieldEditor(){
   if(!CU||CU.role!=='boss'){ showToast('Access denied','error'); return; }
   _refreshFn = renderFieldEditor;
   destroyCharts();
+
+  // Auto-save sanitized schema to localStorage — fixes any corrupt owner values
+  // (e.g. dept IDs stored instead of usernames) on first open after the bug.
+  const sanitized = getFieldSchema();
+  localStorage.setItem(FIELD_SCHEMA_KEY, JSON.stringify(sanitized));
+
   const main = document.getElementById('main');
   const deptTabs = DEPTS.map(d=>`<button class="fe-dept-tab${_feActiveDept===d.id?' active':''}" onclick="_feActiveDept='${d.id}';renderFieldEditor()">${d.icon} ${d.short}</button>`).join('');
 
@@ -3692,11 +3714,16 @@ function _feSetType(idx, type){
 
 function _feOwnerOptions(currentOwner){
   const users = getUsers();
-  const peopleInDept = Object.entries(users).filter(([,u])=>u.role==='hod' && u.dept===_feActiveDept);
-  let opts = `<option value=""${!currentOwner?' selected':''}>👥 Anyone in dept</option>`;
-  peopleInDept.forEach(([uname,u])=>{
-    opts += `<option value="${uname}"${currentOwner===uname?' selected':''}>${u.name}</option>`;
+  // Show all people in this department — filter by dept ID, not dept name
+  const peopleInDept = Object.entries(users).filter(([,u]) => u.role === 'hod' && u.dept === _feActiveDept);
+  let opts = `<option value=""${!currentOwner ? ' selected' : ''}>👥 Anyone in dept</option>`;
+  peopleInDept.forEach(([uname, u]) => {
+    opts += `<option value="${uname}"${currentOwner === uname ? ' selected' : ''}>${u.name}</option>`;
   });
+  // If the saved owner is not in this dept (corrupt data), show a warning option so admin can fix it
+  if (currentOwner && !peopleInDept.some(([uname]) => uname === currentOwner)) {
+    opts += `<option value="${currentOwner}" selected>⚠ Unknown (${currentOwner}) — please reassign</option>`;
+  }
   return opts;
 }
 
