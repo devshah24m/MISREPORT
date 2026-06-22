@@ -511,7 +511,11 @@ async function gsPullAll(){
   // Normalize month keys (sheet may return Date objects as strings)
   const normalizedData = normalizeDataKeys(res.data || {});
   localStorage.setItem(STORE, JSON.stringify(normalizedData));
-  if(res.users) localStorage.setItem(PWD_STORE, JSON.stringify(res.users));
+  if(res.users){
+    // Merge: DEFAULT_USERS as base, Sheets users on top (Sheets wins for existing keys)
+    const merged = Object.assign({}, DEFAULT_USERS, res.users);
+    localStorage.setItem(PWD_STORE, JSON.stringify(merged));
+  }
   if(res.fmts){
     // Extract _schema if embedded
     if(res.fmts._schema){
@@ -4004,7 +4008,7 @@ function importBackup(input){
       const payload = JSON.parse(e.target.result);
       if(!payload._version){ showToast('Invalid backup file','error'); return; }
       if(payload.data)  localStorage.setItem(STORE,           JSON.stringify(payload.data));
-      if(payload.users) localStorage.setItem(PWD_STORE,       JSON.stringify(payload.users));
+      if(payload.users) localStorage.setItem(PWD_STORE, JSON.stringify(Object.assign({}, DEFAULT_USERS, payload.users)));
       if(payload.fmts)  localStorage.setItem(FORMAT_STORE_KEY,JSON.stringify(payload.fmts));
       if(payload._gasUrl && payload._gasUrl.includes('script.google.com')){
         gsSaveUrl(payload._gasUrl);
